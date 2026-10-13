@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: svc_requests
+    description: Latest version of every 311 request that passed data quality rules
+    columns:
+      - name: sr_number
+        data_tests: [unique, not_null]
+      - name: status_group
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['open', 'closed', 'duplicate']}
+              config: {severity: warn}
+  - name: weather_daily
+    columns:
+      - name: obs_date
+        data_tests: [unique, not_null]
+  - name: complaints
+    columns:
+      - name: complaint_id
+        data_tests: [unique, not_null]
+      - name: description
+        data_tests: [not_null]
