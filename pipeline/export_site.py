@@ -46,12 +46,12 @@ def run() -> dict:
                                             macro_precision, macro_recall, macro_f1
                                      from ml.live_metrics order by scored_on"""),
         "predictions": rows(con, """select c.complaint_id, strftime(c.received_date, '%Y-%m-%d') as received,
-                                           c.make, c.model, c.model_year, left(c.description, 220) as text,
+                                           c.make, c.model, c.model_year, left(c.description, 150) as text,
                                            c.component_group as actual, p.predicted_group as predicted,
                                            p.confidence
                                     from ml.predictions p join silver.complaints c using (complaint_id)
                                     where c.component_group is not null
-                                    order by c.received_date desc, c.complaint_id desc limit 12"""),
+                                    order by c.received_date desc, c.complaint_id desc limit 6"""),
     }
     offline = ARTIFACTS / "offline_metrics.json"
     data["offline_metrics"] = json.loads(offline.read_text()) if offline.exists() else None

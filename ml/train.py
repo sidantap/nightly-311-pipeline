@@ -22,8 +22,8 @@ from ml.common import ARTIFACTS, MODEL_ID, MODEL_NAME, component_groups, embed
 from pipeline.ingest_nhtsa import download
 
 CUTOFF = pd.Timestamp("2026-07-01")
-TRAIN_PER_CLASS = 1000
-TEST_PER_CLASS = 250
+TRAIN_PER_CLASS = 300
+TEST_PER_CLASS = 100
 SEED = 7
 
 

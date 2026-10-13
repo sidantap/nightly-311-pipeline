@@ -30,7 +30,7 @@ h1{font:400 clamp(1.9rem,4vw,2.6rem)/1.1 var(--display);margin:8px 0 10px}
 h2{font:400 1.45rem/1.2 var(--display);margin:0 0 4px}
 .lede{color:var(--muted);max-width:68ch;margin:0}
 .lede a,.note a{color:var(--series)}
-.status{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:.8rem var(--mono)}
+.status{display:inline-flex;flex-wrap:wrap;max-width:100%;align-items:center;gap:8px;margin-top:16px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:.8rem var(--mono)}
 .status .ok{color:var(--good)}.status .fail{color:var(--bad)}
 section{padding:32px 0;border-bottom:1px solid var(--line)}
 .sub{color:var(--muted);margin:0 0 20px;max-width:70ch}
@@ -42,6 +42,7 @@ section{padding:32px 0;border-bottom:1px solid var(--line)}
 .card h3{font:500 .95rem var(--body);margin:0 0 2px}
 .card .cap{font:.75rem var(--mono);color:var(--faint);margin:0 0 10px}
 .grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.grid2>*{min-width:0}
 @media (max-width:800px){.grid2{grid-template-columns:1fr}}
 svg{display:block;width:100%;height:auto;overflow:visible}
 svg text{font:11px var(--mono);fill:var(--faint)}

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ARTIFACTS = ROOT / "ml" / "artifacts"
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 MODEL_ID = "bge-small+logreg"
-MAX_CHARS = 1500
+MAX_CHARS = 800
 
 
 def component_groups() -> dict[str, str]:

@@ -17,12 +17,12 @@ import uuid
 from . import ingest_311, ingest_nhtsa, ingest_weather
 from .warehouse import ROOT, connect, log
 
-STEPS = ["ingest", "transform", "classify", "publish", "export"]
+STEPS = ["ingest", "transform", "classify", "publish"]
 
 
-def dbt(*args: str) -> None:
+def dbt(*args: str, check: bool = True) -> None:
     env = {**os.environ, "DBT_PROFILES_DIR": str(ROOT / "dbt")}
-    subprocess.run(["dbt", *args], cwd=ROOT / "dbt", env=env, check=True)
+    subprocess.run(["dbt", *args], cwd=ROOT / "dbt", env=env, check=check)
 
 
 def ensure_weather_table() -> None:
@@ -47,7 +47,8 @@ def step_ingest() -> dict:
 
 def step_transform() -> dict:
     dbt("seed", "--quiet")
-    dbt("source", "freshness")
+    # Stale sources fail the run in CI. Locally weather is often skipped, so only report.
+    dbt("source", "freshness", check=bool(os.environ.get("CI")))
     dbt("build", "--exclude", "gold")
     return {"dbt": "silver ok"}
 
@@ -70,7 +71,9 @@ def step_export() -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--steps", default=",".join(STEPS))
-    steps = [s.strip() for s in ap.parse_args().steps.split(",") if s.strip()]
+    ap.add_argument("--no-export", action="store_true", help="skip writing site/data.json")
+    args = ap.parse_args()
+    steps = [s.strip() for s in args.steps.split(",") if s.strip()]
 
     run_id = f"nightly_{dt.date.today():%Y-%m-%d}_{uuid.uuid4().hex[:6]}"
     con = connect()
@@ -94,8 +97,9 @@ def main() -> int:
                 [status, json.dumps(results, default=str), run_id])
     con.close()
     log("run", status, run_id=run_id)
-    if status == "succeeded" and "export" not in steps:
-        pass
+    # Export after the run is recorded, so the dashboard shows this run's outcome, failed or not.
+    if not args.no_export:
+        step_export()
     return 0 if status == "succeeded" else 1
 
 
