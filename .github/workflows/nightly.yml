@@ -19,7 +19,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
       FASTEMBED_CACHE_PATH: ${{ github.workspace }}/.cache/fastembed
@@ -52,8 +52,8 @@ jobs:
       - name: Run pipeline
         env:
           NOAA_TOKEN: ${{ secrets.NOAA_TOKEN }}
-          BACKFILL_DAYS: "365"       # first run only: a year of 311 and weather
-          NHTSA_BACKFILL_DAYS: "30"  # first run only: keeps the first classification pass short
+          BACKFILL_DAYS: "30"        # first run only: a month of 311 and weather
+          NHTSA_BACKFILL_DAYS: "7"   # first run only: a week of complaints to classify
         run: python -m pipeline.run
 
       - name: Save warehouse for the next run

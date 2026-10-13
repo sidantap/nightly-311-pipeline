@@ -73,7 +73,7 @@ def run() -> dict:
     if wm:
         since = dt.date.fromisoformat(wm) - dt.timedelta(days=OVERLAP_DAYS)
     else:
-        since = today() - dt.timedelta(days=int(os.environ.get("BACKFILL_DAYS", "365")))
+        since = today() - dt.timedelta(days=int(os.environ.get("BACKFILL_DAYS", "30")))
         log("ingest", "311 first run, backfilling", since=since)
 
     df = fetch(since)
