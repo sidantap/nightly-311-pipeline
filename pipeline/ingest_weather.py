@@ -68,7 +68,7 @@ def run() -> dict:
     if wm:
         start = dt.date.fromisoformat(wm) - dt.timedelta(days=OVERLAP_DAYS)
     else:
-        start = end - dt.timedelta(days=int(os.environ.get("BACKFILL_DAYS", "365")))
+        start = end - dt.timedelta(days=int(os.environ.get("BACKFILL_DAYS", "30")))
         log("ingest", "weather first run, backfilling", since=start)
 
     df = fetch(start, end, token)

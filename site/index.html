@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nightly 311 Pipeline</title>
+<meta name="description" content="A data pipeline that runs every night on GitHub Actions: Cincinnati 311 requests and NOAA weather through bronze, silver and gold layers, plus a complaint classifier scored daily.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f3ee; --surface:#fcfcfb; --line:#dcd7cc; --fg:#1d1a16; --muted:#52514e; --faint:#7d7568;
+  --series:#2a78d6; --series-soft:#86b6ef; --good:#1f7a3a; --warn:#9a6a00; --bad:#b0472f;
+  --display:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1915; --surface:#1a1a19; --line:#3a342c; --fg:#f0efec; --muted:#c3c2b7; --faint:#958d80;
+  --series:#3987e5; --series-soft:#256abf; --good:#7cc68a; --warn:#e0b44a; --bad:#e3907e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1915; --surface:#1a1a19; --line:#3a342c; --fg:#f0efec; --muted:#c3c2b7; --faint:#958d80;
+  --series:#3987e5; --series-soft:#256abf; --good:#7cc68a; --warn:#e0b44a; --bad:#e3907e; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 1rem/1.6 var(--body)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header{padding:40px 0 24px;border-bottom:1px solid var(--line)}
+.eyebrow{font:500 .75rem var(--mono);color:var(--faint);letter-spacing:.04em}
+h1{font:400 clamp(1.9rem,4vw,2.6rem)/1.1 var(--display);margin:8px 0 10px}
+h2{font:400 1.45rem/1.2 var(--display);margin:0 0 4px}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+.lede a,.note a{color:var(--series)}
+.status{display:inline-flex;flex-wrap:wrap;max-width:100%;align-items:center;gap:8px;margin-top:16px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:.8rem var(--mono)}
+.status .ok{color:var(--good)}.status .fail{color:var(--bad)}
+section{padding:32px 0;border-bottom:1px solid var(--line)}
+.sub{color:var(--muted);margin:0 0 20px;max-width:70ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.tile b{display:block;font:400 2rem/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile span{font-size:.88rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;position:relative}
+.card h3{font:500 .95rem var(--body);margin:0 0 2px}
+.card .cap{font:.75rem var(--mono);color:var(--faint);margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.grid2>*{min-width:0}
+@media (max-width:800px){.grid2{grid-template-columns:1fr}}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font:11px var(--mono);fill:var(--faint)}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .line{fill:none;stroke:var(--series);stroke-width:2;stroke-linejoin:round}
+svg .bar{fill:var(--series)}
+svg .bar-soft{fill:var(--series-soft)}
+svg .label{fill:var(--muted)}
+svg .value{fill:var(--fg)}
+svg .cross{stroke:var(--faint);stroke-width:1;stroke-dasharray:3 3}
+svg .dot{fill:var(--series);stroke:var(--surface);stroke-width:2}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font:.75rem/1.4 var(--mono);padding:6px 8px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font:500 .72rem var(--mono);color:var(--faint);padding:8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tw{overflow-x:auto}
+.mark-ok{color:var(--good);font-weight:600}.mark-bad{color:var(--bad);font-weight:600}
+.snip{color:var(--muted);font-size:.85rem;max-width:44ch}
+.note{font-size:.88rem;color:var(--muted);margin-top:12px}
+details summary{cursor:pointer;font:.8rem var(--mono);color:var(--series);margin-top:10px}
+footer{padding:28px 0 40px;color:var(--faint);font:.8rem var(--mono)}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">sidantap / nightly-311-pipeline</div>
+    <h1>Nightly 311 pipeline</h1>
+    <p class="lede">Every night GitHub Actions pulls new Cincinnati 311 service requests, NOAA weather and NHTSA vehicle complaints. It lands them as received, cleans and tests them with dbt, routes bad rows to quarantine, classifies new complaints with an open-source model, and rebuilds this page. Cost to run: $0. <a href="https://github.com/sidantap/nightly-311-pipeline">Source and README</a>.</p>
+    <div class="status" id="status">loading…</div>
+  </header>
+
+  <section>
+    <h2>311 service requests</h2>
+    <p class="sub">What Cincinnati residents asked the city for, from the gold star schema.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="grid2">
+      <div class="card" id="dailyCard">
+        <h3>Requests per day</h3><p class="cap">last 90 days · hover for values</p>
+        <div id="daily"></div>
+        <p class="cap" style="margin:14px 0 6px">Precipitation at CVG airport, inches</p>
+        <div id="precip"></div>
+        <div class="tip" id="dailyTip"></div>
+      </div>
+      <div class="card" id="catCard">
+        <h3>Requests by category</h3><p class="cap">last 30 days</p>
+        <div id="cats"></div>
+        <div class="tip" id="catTip"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Complaint classifier</h2>
+    <p class="sub">Reads the free-text description of each new NHTSA vehicle complaint and predicts which part of the car it's about. NHTSA's own component tag is the answer key, so the model is scored every night on complaints it has never seen.</p>
+    <div class="tiles" id="mlTiles"></div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Latest predictions</h3><p class="cap">newest labeled complaints</p>
+        <div class="tw"><table id="preds"><thead><tr><th>Complaint</th><th>Official</th><th>Predicted</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="card" id="clsCard">
+        <h3>F1 score by component</h3><p class="cap">held-out test set, complaints from after the training cutoff</p>
+        <div id="cls"></div>
+        <div class="tip" id="clsTip"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pipeline health</h2>
+    <p class="sub">Rows that break a data quality rule are held in quarantine with the reason, instead of being dropped or passed through.</p>
+    <div class="grid2">
+      <div class="card"><h3>Recent runs</h3><p class="cap">most recent first</p>
+        <div class="tw"><table id="runs"><thead><tr><th>Started (UTC)</th><th>Status</th><th class="num">Seconds</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><h3>Quarantine</h3><p class="cap">311 requests held for review</p>
+        <div class="tw"><table id="quar"><thead><tr><th>Rule broken</th><th class="num">Rows</th></tr></thead><tbody></tbody></table></div>
+        <h3 style="margin-top:18px">Watermarks</h3><p class="cap">each source's high-water mark after the last run</p>
+        <div class="tw"><table id="wm"><thead><tr><th>Source</th><th>Watermark</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => n == null ? "–" : Number(n).toLocaleString("en-US");
+const pct = n => n == null ? "–" : (n * 100).toFixed(1) + "%";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent&&parent.appendChild(e);return e;}
+function tipAt(tip, card, x, y, html){tip.innerHTML=html;const r=card.getBoundingClientRect();let left=x-r.left+12;if(left+tip.offsetWidth>r.width-8)left=x-r.left-tip.offsetWidth-12;tip.style.left=left+"px";tip.style.top=(y-r.top-10)+"px";tip.style.opacity=1;}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v||1)));return Math.ceil(v/p)*p;}
+
+function lineChart(host, rows, key){
+  const W=640,H=200,L=40,R=8,T=8,B=22, svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Requests per day, line chart"},host);
+  const max=niceMax(Math.max(...rows.map(r=>r[key]))), x=i=>L+i*(W-L-R)/Math.max(rows.length-1,1), y=v=>T+(H-T-B)*(1-v/max);
+  for(let k=0;k<=4;k++){const v=max*k/4;el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),class:"grid"},svg);el("text",{x:L-6,y:y(v)+4,"text-anchor":"end"},svg).textContent=fmt(v);}
+  rows.forEach((r,i)=>{if(i%15===0||i===rows.length-1)el("text",{x:x(i),y:H-4,"text-anchor":"middle"},svg).textContent=r.day.slice(5);});
+  el("path",{d:rows.map((r,i)=>(i?"L":"M")+x(i)+" "+y(r[key])).join(""),class:"line"},svg);
+  return {svg,x,y,W,H,L,R};
+}
+
+function render(d){
+  const last=d.runs[0];
+  $("#status").innerHTML = last ? `<span class="${last.status==="succeeded"?"ok":"fail"}">${last.status==="succeeded"?"✓ last run succeeded":"✗ last run failed"}</span> · ${esc(last.started)} UTC` : "no runs yet";
+  const k=d.kpis;
+  $("#tiles").innerHTML=[[fmt(k.requests_30d),"requests in the last 30 days"],[fmt(k.open_now),"requests open right now"],[k.median_days_to_close_90d ?? "–","median days to close (90 days)"],[fmt(d.quarantine_total),"rows in quarantine"]].map(t=>`<div class="tile"><b>${t[0]}</b><span>${t[1]}</span></div>`).join("");
+
+  // daily line + crosshair
+  if(d.daily.length){
+    const c=lineChart($("#daily"),d.daily,"requests"), tip=$("#dailyTip"), card=$("#dailyCard");
+    const cross=el("line",{class:"cross",y1:8,y2:c.H-22,opacity:0},c.svg), dot=el("circle",{r:4,class:"dot",opacity:0},c.svg);
+    const hit=el("rect",{x:c.L,y:0,width:c.W-c.L-c.R,height:c.H,fill:"transparent"},c.svg);
+    const move=e=>{const pt=c.svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(c.svg.getScreenCTM().inverse());
+      const i=Math.max(0,Math.min(d.daily.length-1,Math.round((p.x-c.L)/((c.W-c.L-c.R)/Math.max(d.daily.length-1,1)))));const r=d.daily[i];
+      cross.setAttribute("x1",c.x(i));cross.setAttribute("x2",c.x(i));cross.setAttribute("opacity",1);dot.setAttribute("cx",c.x(i));dot.setAttribute("cy",c.y(r.requests));dot.setAttribute("opacity",1);
+      tipAt(tip,card,e.clientX,e.clientY,`${r.day}<br>${fmt(r.requests)} requests<br>${r.precip_in==null?"no weather":r.precip_in+" in rain · high "+r.temp_max_f+"°F"}`);};
+    hit.addEventListener("pointermove",move);hit.addEventListener("pointerleave",()=>{tip.style.opacity=0;cross.setAttribute("opacity",0);dot.setAttribute("opacity",0);});
+    // precipitation small multiple on the same x scale
+    const W=640,H=70,svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Daily precipitation"},$("#precip"));
+    const pmax=Math.max(0.5,...d.daily.map(r=>r.precip_in||0)), bw=Math.max(2,(W-48)/d.daily.length-2);
+    el("line",{x1:40,x2:W-8,y1:H-4,y2:H-4,class:"grid"},svg);el("text",{x:34,y:12,"text-anchor":"end"},svg).textContent=pmax.toFixed(1);
+    d.daily.forEach((r,i)=>{if(r.precip_in>0){const h=(H-12)*(r.precip_in/pmax);el("rect",{x:c.x(i)-bw/2,y:H-4-h,width:bw,height:h,rx:1,class:"bar-soft"},svg);}});
+  }
+
+  // categories horizontal bars
+  if(d.categories.length){
+    const W=420,row=30,L=168,H=d.categories.length*row,svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Requests by category, bar chart"},$("#cats"));
+    const max=Math.max(...d.categories.map(r=>r.requests)), tip=$("#catTip"), card=$("#catCard");
+    d.categories.forEach((r,i)=>{const w=(W-L-52)*r.requests/max, yy=i*row;
+      el("text",{x:L-8,y:yy+19,"text-anchor":"end",class:"label"},svg).textContent=r.category.length>24?r.category.slice(0,23)+"…":r.category;
+      const b=el("rect",{x:L,y:yy+7,width:Math.max(w,2),height:16,rx:3,class:"bar"},svg);
+      el("text",{x:L+w+6,y:yy+19,class:"value"},svg).textContent=fmt(r.requests);
+      const hit=el("rect",{x:0,y:yy,width:W,height:row,fill:"transparent"},svg);
+      hit.addEventListener("pointermove",e=>tipAt(tip,card,e.clientX,e.clientY,`${esc(r.category)}<br>${fmt(r.requests)} requests<br>median ${r.median_days_to_close ?? "–"} days to close`));
+      hit.addEventListener("pointerleave",()=>tip.style.opacity=0);});
+  }
+
+  // classifier
+  const off=d.offline_metrics, live=d.live_metrics[d.live_metrics.length-1];
+  $("#mlTiles").innerHTML=[
+    [off?pct(off.accuracy):"–","accuracy on the held-out test set"],
+    [off?off.macro["f1-score"].toFixed(2):"–","macro F1, held-out test set"],
+    [live?pct(live.accuracy):"–",live?`live accuracy, last 30 days (${fmt(live.rows)} complaints)`:"live accuracy (after first runs)"],
+    [off?off.per_class&&Object.keys(off.per_class).length:"–","components it can tell apart"]
+  ].map(t=>`<div class="tile"><b>${t[0]}</b><span>${t[1]}</span></div>`).join("");
+  $("#preds tbody").innerHTML=d.predictions.map(p=>`<tr><td><div>${esc(p.make)} ${esc(p.model)} ${esc(p.model_year)}</div><div class="snip">${esc(p.text)}…</div></td><td>${esc(p.actual)}</td><td>${esc(p.predicted)}<div class="snip">${pct(p.confidence)} sure</div></td><td>${p.actual===p.predicted?'<span class="mark-ok" title="correct">✓ right</span>':'<span class="mark-bad" title="wrong">✗ wrong</span>'}</td></tr>`).join("") || `<tr><td colspan="4">No predictions yet.</td></tr>`;
+  if(off){
+    const cls=Object.entries(off.per_class).sort((a,b)=>b[1]["f1-score"]-a[1]["f1-score"]);
+    const W=420,row=28,L=150,H=cls.length*row,svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"F1 score by component, bar chart"},$("#cls"));
+    const tip=$("#clsTip"), card=$("#clsCard");
+    cls.forEach(([name,m],i)=>{const w=(W-L-44)*m["f1-score"], yy=i*row;
+      el("text",{x:L-8,y:yy+18,"text-anchor":"end",class:"label"},svg).textContent=name.length>20?name.slice(0,19)+"…":name;
+      el("rect",{x:L,y:yy+6,width:Math.max(w,2),height:16,rx:3,class:"bar"},svg);
+      el("text",{x:L+w+6,y:yy+18,class:"value"},svg).textContent=m["f1-score"].toFixed(2);
+      const hit=el("rect",{x:0,y:yy,width:W,height:row,fill:"transparent"},svg);
+      hit.addEventListener("pointermove",e=>tipAt(tip,card,e.clientX,e.clientY,`${esc(name)}<br>precision ${m.precision.toFixed(2)} · recall ${m.recall.toFixed(2)}<br>${m.support} test complaints`));
+      hit.addEventListener("pointerleave",()=>tip.style.opacity=0);});
+  }
+
+  $("#runs tbody").innerHTML=d.runs.map(r=>`<tr><td>${esc(r.started)}</td><td>${r.status==="succeeded"?'<span class="mark-ok">✓ succeeded</span>':'<span class="mark-bad">✗ '+esc(r.status)+'</span>'}</td><td class="num">${fmt(r.seconds)}</td></tr>`).join("");
+  $("#quar tbody").innerHTML=d.quarantine.map(q=>`<tr><td>${esc(q.dq_reason.replaceAll("_"," "))}</td><td class="num">${fmt(q.rows)}</td></tr>`).join("") || `<tr><td colspan="2">Nothing quarantined.</td></tr>`;
+  $("#wm tbody").innerHTML=d.watermarks.map(w=>`<tr><td>${esc(w.source)}</td><td>${esc(w.watermark)}</td></tr>`).join("");
+  $("#foot").innerHTML=`Data generated ${esc(d.generated_at)} · built by <a href="https://sidantap.github.io/portfolio/">Sidanta Parajuli</a>`;
+}
+fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(render).catch(e=>{$("#status").textContent="Could not load data: "+e.message;});
+</script>
+</body>
+</html>

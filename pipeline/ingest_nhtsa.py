@@ -51,7 +51,7 @@ def run() -> dict:
     if wm:
         since = dt.date.fromisoformat(wm) - dt.timedelta(days=OVERLAP_DAYS)
     else:
-        since = today() - dt.timedelta(days=int(os.environ.get("NHTSA_BACKFILL_DAYS", "365")))
+        since = today() - dt.timedelta(days=int(os.environ.get("NHTSA_BACKFILL_DAYS", "7")))
         log("ingest", "NHTSA first run, backfilling", since=since)
 
     df = download(today().year)
