@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 
+import duckdb
+
 from ml.common import ARTIFACTS
 from .warehouse import ROOT, connect, log
 
@@ -10,9 +12,19 @@ OUT = ROOT / "site" / "data.json"
 
 
 def rows(con, sql: str) -> list[dict]:
-    cur = con.execute(sql)
+    """Run a dashboard query. A table that doesn't exist yet (first run failed before
+    building it) yields no rows, so the page still renders and shows the failed run."""
+    try:
+        cur = con.execute(sql)
+    except duckdb.CatalogException:
+        return []
     cols = [d[0] for d in cur.description]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
+def scalar(con, sql: str):
+    found = rows(con, sql)
+    return next(iter(found[0].values())) if found else None
 
 
 def run() -> dict:
@@ -28,7 +40,7 @@ def run() -> dict:
                  count(*) filter (where created_date_key >= current_date - 30) as requests_30d,
                  count(*) filter (where is_open) as open_now,
                  round(median(days_to_close) filter (where created_date_key >= current_date - 90), 1) as median_days_to_close_90d
-               from gold.fct_service_requests""")[0],
+               from gold.fct_service_requests""")[0] if rows(con, "select 1 from gold.fct_service_requests limit 1") else {},
         "daily": rows(con, """select strftime(day, '%Y-%m-%d') as day, sum(requests) as requests,
                                      any_value(precip_in) as precip_in, any_value(temp_max_f) as temp_max_f
                               from gold.fct_daily_requests_weather
@@ -41,7 +53,7 @@ def run() -> dict:
                                    group by 1 order by 2 desc"""),
         "quarantine": rows(con, """select dq_reason, count(*) as rows
                                    from quarantine.svc_requests_quarantine group by 1 order by 2 desc"""),
-        "quarantine_total": con.execute("select count(*) from quarantine.svc_requests_quarantine").fetchone()[0],
+        "quarantine_total": scalar(con, "select count(*) from quarantine.svc_requests_quarantine"),
         "live_metrics": rows(con, """select strftime(scored_on, '%Y-%m-%d') as day, rows, accuracy,
                                             macro_precision, macro_recall, macro_f1
                                      from ml.live_metrics order by scored_on"""),

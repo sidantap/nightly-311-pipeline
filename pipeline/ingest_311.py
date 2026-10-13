@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import os
+import time
 import uuid
 
 import pandas as pd
@@ -23,12 +24,14 @@ COLUMNS = [
     "date_closed", "sr_status", "sr_status_flag", "date_last_update", "time_last_update",
     "planned_completion_days", "latitude", "longitude",
 ]
-PAGE = 50_000
+PAGE = 20_000
+RETRIES = 4
 OVERLAP_DAYS = 2
 
 
 def fetch(since: dt.date) -> pd.DataFrame:
-    where = f"date_last_update >= '{since.isoformat()}' OR date_created >= '{since.isoformat()}'"
+    # Every request has date_last_update >= date_created, so one indexed filter covers new and changed rows.
+    where = f"date_last_update >= '{since.isoformat()}'"
     frames, offset = [], 0
     session = requests.Session()
     session.headers["User-Agent"] = "nightly-311-pipeline (github.com/sidantap/nightly-311-pipeline)"
@@ -37,7 +40,18 @@ def fetch(since: dt.date) -> pd.DataFrame:
     while True:
         params = {"$select": ",".join(COLUMNS), "$where": where, "$order": "sr_number",
                   "$limit": PAGE, "$offset": offset}
-        r = session.get(URL, params=params, timeout=120)
+        for attempt in range(1, RETRIES + 1):
+            try:
+                r = session.get(URL, params=params, timeout=180)
+                if r.status_code < 500:
+                    break
+                err = f"HTTP {r.status_code}"
+            except requests.RequestException as e:
+                err = type(e).__name__
+            if attempt == RETRIES:
+                raise RuntimeError(f"311 API failed {RETRIES} times at offset {offset}: {err}")
+            log("ingest", "311 API slow or failing, retrying", attempt=attempt, error=err, wait_s=10 * attempt)
+            time.sleep(10 * attempt)
         r.raise_for_status()
         rows = r.json()
         if not rows:
