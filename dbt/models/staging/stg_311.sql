@@ -2,7 +2,7 @@
 select
     sr_number,
     upper(trim(sr_type))                                   as sr_type,
-    upper(trim(sr_type_desc))                              as sr_type_desc,
+    coalesce(nullif(upper(trim(sr_type_desc)), ''), 'UNKNOWN') as sr_type_desc,  -- a few requests arrive with no type
     upper(trim(dept_name))                                 as dept_name,
     upper(trim(dept_division))                             as dept_division,
     upper(trim(neighborhood))                              as neighborhood,
