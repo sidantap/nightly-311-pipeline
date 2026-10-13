@@ -1,0 +1,29 @@
+component_prefix,component_group
+ENGINE,Engine
+ENGINE AND ENGINE COOLING,Engine
+POWER TRAIN,Powertrain
+ELECTRICAL SYSTEM,Electrical
+STEERING,Steering
+STRUCTURE,Structure and body
+SERVICE BRAKES,Brakes
+"SERVICE BRAKES, HYDRAULIC","Brakes"
+"SERVICE BRAKES, AIR",Brakes
+PARKING BRAKE,Brakes
+FUEL/PROPULSION SYSTEM,Fuel and propulsion
+"FUEL SYSTEM, GASOLINE",Fuel and propulsion
+"FUEL SYSTEM, DIESEL",Fuel and propulsion
+"FUEL SYSTEM, OTHER",Fuel and propulsion
+HYBRID PROPULSION SYSTEM,Fuel and propulsion
+AIR BAGS,Air bags
+BACK OVER PREVENTION,Driver assistance
+FORWARD COLLISION AVOIDANCE,Driver assistance
+LANE DEPARTURE,Driver assistance
+ELECTRONIC STABILITY CONTROL (ESC),Driver assistance
+EXTERIOR LIGHTING,Lights and visibility
+VISIBILITY/WIPER,Lights and visibility
+VISIBILITY,Lights and visibility
+SUSPENSION,Suspension
+SEAT BELTS,Seats and belts
+SEATS,Seats and belts
+TIRES,Wheels and tires
+WHEELS,Wheels and tires

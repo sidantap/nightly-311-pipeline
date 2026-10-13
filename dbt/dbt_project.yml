@@ -1,0 +1,17 @@
+name: nightly_311
+version: "1.0"
+profile: nightly_311
+model-paths: [models]
+seed-paths: [seeds]
+test-paths: [tests]
+macro-paths: [macros]
+
+models:
+  nightly_311:
+    staging: {+schema: staging, +materialized: view}
+    silver: {+schema: silver, +materialized: table}
+    quarantine: {+schema: quarantine, +materialized: table}
+    gold: {+schema: gold, +materialized: table}
+seeds:
+  nightly_311:
+    +schema: ref

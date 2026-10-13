@@ -1,0 +1,33 @@
+version: 2
+models:
+  - name: dim_request_type
+    columns:
+      - name: request_type_key
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Trash and recycling', 'Streets and traffic', 'Dumping, graffiti and litter',
+                         'Buildings and property', 'Vehicles and parking', 'Trees and parks',
+                         'Water and sewer', 'Other']
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]
+  - name: fct_service_requests
+    columns:
+      - name: sr_number
+        data_tests: [unique, not_null]
+      - name: request_type_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_request_type'), field: request_type_key}
+      - name: created_date_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_date'), field: date_key}
+      - name: days_to_close
+        data_tests:
+          - non_negative

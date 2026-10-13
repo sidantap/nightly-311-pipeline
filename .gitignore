@@ -1,0 +1,9 @@
+.venv/
+warehouse/
+__pycache__/
+*.pyc
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+.user.yml
+site/data.json

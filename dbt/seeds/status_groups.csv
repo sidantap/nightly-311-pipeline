@@ -1,0 +1,22 @@
+sr_status,status_group,status_label
+NEW,open,New
+ACCEPTED,open,Accepted
+ROUTE,open,Routed
+DISPATCH,open,Dispatched
+WDISP,open,Waiting dispatch
+RESEARCH,open,Under research
+INPROGRS,open,In progress
+ORDERS1,open,Orders issued
+ORDERS2,open,Orders issued
+ORDERS3,open,Orders issued
+ORDERS4,open,Orders issued
+SECURE,open,Securing property
+APPEAL,open,Under appeal
+CIVIL,open,Civil action
+CRIMINAL,open,Criminal action
+CLOSED,closed,Closed
+CLOS-NO,closed,Closed (no action needed)
+CLOS-RI,closed,Closed (referred)
+COMPLETE,closed,Completed
+ABAT-OWN,closed,Abated by owner
+DUPLICAT,duplicate,Duplicate request

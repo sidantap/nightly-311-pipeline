@@ -1,0 +1,15 @@
+version: 2
+sources:
+  - name: raw
+    schema: raw
+    loaded_at_field: _ingested_at
+    freshness:
+      warn_after: {count: 30, period: hour}
+      error_after: {count: 54, period: hour}
+    tables:
+      - name: cincy_311
+        description: Cincinnati 311 service requests, every version as received
+      - name: weather_daily
+        description: NOAA GHCND daily observations at CVG airport
+      - name: nhtsa_complaints
+        description: NHTSA vehicle safety complaints, one row per complaint and component
